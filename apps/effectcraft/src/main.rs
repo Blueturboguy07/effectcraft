@@ -45,6 +45,20 @@ fn app_icon() -> egui::IconData {
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()
 }
 
+/// What publik needs to know about this build. The app token is public by design (it can only mint
+/// capped keys attributed to EffectCraft) and lives at the repository root, so source builds carry
+/// it. AI settings (`ai.json`) go in the settings folder, next to the preferences.
+fn app_info(config_dir: Option<std::path::PathBuf>) -> effectcraft_ui_egui::ai::AppInfo {
+    effectcraft_ui_egui::ai::AppInfo {
+        slug: "effectcraft",
+        name: "EffectCraft",
+        version: env!("CARGO_PKG_VERSION"),
+        app_token: include_str!("../../../publik-app-token.txt"),
+        dialects: &["images", "audio_speech"],
+        config_dir,
+    }
+}
+
 /// Both native JSON projects and Save a Copy As XML projects are openable on launch.
 /// Keep this classification shared by project opening and the subsequent media-import pass.
 fn is_project_file(path: &str) -> bool {
@@ -139,6 +153,13 @@ fn install_file_dialogs(app: &mut EffectcraftApp, ctx: &egui::Context) {
 }
 
 fn main() -> eframe::Result {
+    // Builder check (publikhq.com/skills/setup.md): the built app provisions publik API for real
+    // and prints one line. The builder who runs it is the consent. Before anything else, so the
+    // check opens no window and leaves no log file.
+    if std::env::var_os("PUBLIK_SELF_TEST").is_some() {
+        println!("{}", effectcraft_ui_egui::ai::self_test(&app_info(effectcraft_host::config_dir())));
+        return Ok(());
+    }
     // First, so the panic hook and every start-up warning are recorded. Records go to stderr
     // and the session log; Help ▸ Enable Logging writes through this logger too, and warnings
     // feed the compatibility report.
@@ -263,6 +284,16 @@ fn main() -> eframe::Result {
             // reported in a toast and forgotten).
             let _ = session.execute("window.restoreScriptPanels", json!({}));
             let mut app = EffectcraftApp::new(session);
+            // Layer ▸ AI through publik API or the person's own key; the first launch asks. Only
+            // with a settings folder to keep the choice in; the first-launch dialog stays closed
+            // while an agent drives the app over `--control`.
+            if let Some(dir) = effectcraft_host::config_dir() {
+                let mut ai = effectcraft_ui_egui::ai::Ai::new(app_info(Some(dir)));
+                if control_port.is_some() {
+                    ai.skip_first_run();
+                }
+                app.ai = Some(ai);
+            }
             app.set_gpu_failure_bridge(gpu_failures);
             app.ui.start_screen = show_home;
             if let Some(n) = notice {
