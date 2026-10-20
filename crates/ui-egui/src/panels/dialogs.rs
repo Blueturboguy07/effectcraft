@@ -262,6 +262,11 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context) {
         Dialog::DeleteItems => super::delete_items::show(app, ctx, &t),
         Dialog::GradientEditor => super::gradient_editor::show(app, ctx, &t),
         Dialog::DeleteTemplate => super::templates::show_delete(app, ctx, &t),
+        #[cfg(not(target_arch = "wasm32"))]
+        Dialog::AiSetup | Dialog::AiImage | Dialog::AiVoice => crate::ai::dialog(app, ctx, &t, d),
+        // The web app has no AI.
+        #[cfg(target_arch = "wasm32")]
+        Dialog::AiSetup | Dialog::AiImage | Dialog::AiVoice => app.dialog = None,
     }
 }
 

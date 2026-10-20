@@ -622,8 +622,24 @@ fn labels_ui(app: &mut EffectcraftApp, ui: &mut egui::Ui, cur: &Value, acts: &mu
     }
 }
 
+/// A page's rows; Settings ▸ AI (desktop) draws the shared AI controls instead.
+fn page_body(app: &mut EffectcraftApp, ui: &mut egui::Ui, page: &Page, cur: &Value, t: &Tokens, acts: &mut Vec<Act>) {
+    #[cfg(not(target_arch = "wasm32"))]
+    if page.id == crate::ai::SETTINGS_PAGE {
+        crate::ai::settings_ui(app, ui);
+        return;
+    }
+    page_ui(app, ui, page, cur, t, acts);
+}
+
 pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
-    let all = pages();
+    #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
+    let mut all = pages();
+    // Settings ▸ AI, where the desktop app installed AI.
+    #[cfg(not(target_arch = "wasm32"))]
+    if app.ai.is_some() {
+        all.push(crate::ai::settings_page());
+    }
     let mut page = app.dialog_state.settings_page.clone();
     if !all.iter().any(|p| p.id == page) {
         page = "general".into();
@@ -697,7 +713,7 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
                 ui.label(RichText::new(tr(p.title)).font(Tokens::semibold(14.0)).color(t.tab_text_active));
                 ui.add_space(6.0);
                 egui::ScrollArea::vertical().max_height((body_h - 30.0).max(0.0)).auto_shrink([false, false]).show(ui, |ui| {
-                    page_ui(app, ui, p, &cur, t, &mut acts);
+                    page_body(app, ui, p, &cur, t, &mut acts);
                 });
             });
         }

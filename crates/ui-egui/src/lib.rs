@@ -7,6 +7,9 @@
 
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+/// Layer ▸ AI through publik API or the person's own key (desktop only: it talks to the network).
+#[cfg(not(target_arch = "wasm32"))]
+pub mod ai;
 pub mod audio;
 pub mod automation;
 pub mod bench;
@@ -99,6 +102,12 @@ pub enum Dialog {
     GradientEditor,
     /// Delete a user template from Home? (`panels::templates`).
     DeleteTemplate,
+    /// AI setup: publik API or the person's own key (`ai`, desktop only).
+    AiSetup,
+    /// Layer ▸ AI ▸ Generate Image Layer (`ai`, desktop only).
+    AiImage,
+    /// Layer ▸ AI ▸ Voice-over from Text (`ai`, desktop only).
+    AiVoice,
 }
 
 /// The desktop's light or dark appearance where egui cannot see it (Wayland compositors that send
@@ -352,6 +361,10 @@ pub struct EffectcraftApp {
     pub(crate) template_thumbs: std::collections::HashMap<String, Option<egui::TextureHandle>>,
     /// Home ▸ Templates: the gallery, and the user template files it was listed from.
     pub(crate) template_list: Option<(Vec<String>, Vec<effectcraft_engine::templates::TemplateInfo>)>,
+    /// Layer ▸ AI (publik API or the person's own key). The desktop app installs it where it has a
+    /// settings folder; tests, scripts and the web app run without it.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub ai: Option<ai::Ai>,
 }
 
 /// The saved workspaces in the settings store ([`effectcraft_engine::config::ConfigStore`]).
@@ -427,6 +440,8 @@ impl EffectcraftApp {
             window_title: String::new(),
             template_thumbs: Default::default(),
             template_list: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            ai: None,
         }
         .with_ui_commands()
     }
@@ -1659,6 +1674,8 @@ impl EffectcraftApp {
         self.run_script_tasks(&ctx);
         self.apply_prefs(&ctx);
         self.handle_events(&ctx);
+        #[cfg(not(target_arch = "wasm32"))]
+        ai::frame(self, &ctx);
         panels::unsaved::on_close_requested(self, &ctx);
         let title = panels::unsaved::window_title(self);
         if title != self.window_title {

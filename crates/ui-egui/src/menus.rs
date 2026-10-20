@@ -929,6 +929,9 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             app.dialog = Some(crate::Dialog::About);
             Value::Null
         }
+        // Layer ▸ AI: their dialogs and Settings ▸ AI (the desktop app; the web app has none).
+        #[cfg(not(target_arch = "wasm32"))]
+        "ai.generateImageLayer" | "ai.voiceOver" | "ai.settings" => crate::ai::command(app, id)?,
         // Window ▸ <ScriptUI panel>: dock (or bring forward) the panel the script built.
         // Audio scrubbing: one frame of audio at `time` (default the current time).
         "playback.scrubAudio" => {
@@ -1628,6 +1631,11 @@ pub(crate) fn entry_enabled(app: &EffectcraftApp, e: &MenuEntry) -> bool {
     }
     if e.command == "window.panel" {
         return true;
+    }
+    // Layer ▸ AI: on where the desktop app installed AI.
+    #[cfg(not(target_arch = "wasm32"))]
+    if e.command.starts_with("ai.") {
+        return crate::ai::enabled(app, &e.command);
     }
     app.session.is_enabled(&e.command)
 }
