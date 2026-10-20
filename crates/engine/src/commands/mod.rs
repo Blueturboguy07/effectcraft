@@ -1,6 +1,9 @@
 //! The command registry. Ids follow After Effects' menu structure; every menu item, panel button,
 //! shortcut and viewer/timeline gesture maps to one of these.
 
+// Layer ▸ AI: dialogs of the desktop app (publik API or the person's own key); not in the web app.
+#[cfg(not(target_arch = "wasm32"))]
+mod ai;
 mod align;
 mod align_data;
 mod anim;
@@ -235,6 +238,8 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(crate::storage::specs());
         v.extend(crate::learn::specs());
         v.extend(crate::templates::specs());
+        #[cfg(not(target_arch = "wasm32"))]
+        v.extend(ai::specs());
         v.extend(crate::preview::specs());
         v
     })

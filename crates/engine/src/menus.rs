@@ -15,6 +15,7 @@
 //!   @dynamic:history                          entries computed from the session when the menu
 //!                                             opens ([`dynamic`]: recent files, undo history…)
 //! [mac] Quit EffectCraft | app.quit           only on macOS ([!mac] = everywhere else)
+//! [desktop] AI                                only in the desktop app (not the web app)
 //! ```
 //!
 //! An entry's shortcut is the command's default shortcut unless the line gives one (needed for
@@ -370,7 +371,8 @@ fn platform_label(label: &str, mac: bool) -> String {
     }
 }
 
-/// Parse the tree text. `mac` selects `[mac]` / `[!mac]` lines.
+/// Parse the tree text. `mac` selects `[mac]` / `[!mac]` lines; `[desktop]` lines are left out of
+/// the web app's build.
 pub fn parse(text: &str, mac: bool) -> Result<Vec<MenuNode>, String> {
     struct Line<'a> {
         depth: usize,
@@ -398,7 +400,10 @@ pub fn parse(text: &str, mac: bool) -> Result<Vec<MenuNode>, String> {
             *body = rest;
             Some(keep)
         };
-        if let Some(false) = tagged("[mac] ", mac, &mut body).or_else(|| tagged("[!mac] ", !mac, &mut body)) {
+        if let Some(false) = tagged("[mac] ", mac, &mut body)
+            .or_else(|| tagged("[!mac] ", !mac, &mut body))
+            .or_else(|| tagged("[desktop] ", !cfg!(target_arch = "wasm32"), &mut body))
+        {
             skip_below = Some(depth);
             continue;
         }
@@ -739,6 +744,11 @@ Layer
     Torus | layer.new3dPrimitive {"kind":"torus"}
     Cone | layer.new3dPrimitive {"kind":"cone"}
     Cylinder | layer.new3dPrimitive {"kind":"cylinder"}
+  [desktop] AI
+    Generate Image Layer... | ai.generateImageLayer
+    Voice-over from Text... | ai.voiceOver
+    ---
+    AI Settings... | ai.settings
   Layer Settings... | layer.settings
   ---
   Open Layer | layer.openLayer
