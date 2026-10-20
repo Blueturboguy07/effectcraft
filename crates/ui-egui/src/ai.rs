@@ -541,6 +541,11 @@ fn cost_line(state: &AiState, provider: &Provider) -> String {
     }
 }
 
+/// A dialog's default button: the accent fill while it can be clicked, a plain button when not.
+fn primary(label: &str, enabled: bool, t: &Tokens) -> egui::Button<'static> {
+    if enabled { egui::Button::new(RichText::new(label.to_string()).color(Color32::WHITE)).fill(t.accent) } else { egui::Button::new(label.to_string()) }
+}
+
 /// What the person clicked in a feature dialog.
 enum Click {
     Generate,
@@ -559,7 +564,7 @@ fn feature_dialog(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens, kin
     let mut action = Action::None;
     let mut autos: Vec<(String, egui::Rect, &'static str)> = vec![];
     let p = kind.auto();
-    crate::panels::dialogs::modal(ctx, kind.title(), vec2(560.0, 470.0), t, |ui| {
+    crate::panels::dialogs::modal(ctx, kind.title(), vec2(560.0, 400.0), t, |ui| {
         let Some(ai) = app.ai.as_mut() else {
             ui.label(RichText::new(OFF).color(t.text_dim));
             ui.add_space(10.0);
@@ -572,8 +577,8 @@ fn feature_dialog(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens, kin
         if !provider.is_set_up() {
             ui.add(egui::Label::new(format!("{} needs AI. Set it up first: publik API (no key to paste) or your own key.", kind.title())).wrap());
             ui.add_space(12.0);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let r = ui.add(egui::Button::new(RichText::new("Set Up AI...").color(Color32::WHITE)).fill(t.accent));
+            ui.allocate_ui_with_layout(vec2(ui.available_width(), 26.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let r = ui.add(primary("Set Up AI...", true, t));
                 autos.push((format!("{p}.setUp"), r.rect, "Set Up AI"));
                 if r.clicked() {
                     click = Some(Click::SetUp);
@@ -658,15 +663,15 @@ fn feature_dialog(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens, kin
         ui.add_space(10.0);
         let task = ai.task(kind);
         let can_generate = supported && !busy && target.is_some() && !task.text.trim().is_empty();
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        ui.allocate_ui_with_layout(vec2(ui.available_width(), 26.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if waiting {
-                let r = ui.add_enabled(target.is_some(), egui::Button::new(RichText::new("Place").color(Color32::WHITE)).fill(t.accent));
+                let r = ui.add_enabled(target.is_some(), primary("Place", target.is_some(), t));
                 autos.push((format!("{p}.place"), r.rect, "Place"));
                 if r.clicked() {
                     click = Some(Click::Place);
                 }
             } else {
-                let r = ui.add_enabled(can_generate, egui::Button::new(RichText::new("Generate").color(Color32::WHITE)).fill(t.accent));
+                let r = ui.add_enabled(can_generate, primary("Generate", can_generate, t));
                 autos.push((format!("{p}.generate"), r.rect, "Generate"));
                 if r.clicked() {
                     click = Some(Click::Generate);
