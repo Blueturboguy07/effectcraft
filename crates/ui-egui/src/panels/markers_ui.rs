@@ -488,7 +488,7 @@ mod tests {
         assert_eq!(effectcraft_engine::color::Label::ALL[d.label].name(), "Blue");
         d.duration = 0.5;
         d.chapter = "Ch".into();
-        d.url = "https://getartcraft.com".into();
+        d.url = "https://publikhq.com/adobe".into();
         d.frame_target = "_self".into();
         d.protected = true;
         d.cue = false;

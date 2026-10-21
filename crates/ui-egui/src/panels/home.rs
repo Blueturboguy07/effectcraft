@@ -273,7 +273,7 @@ fn rail_ui(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, rail:
     // Community links at the foot (below the pages when the window is short).
     let links = [
         (Icon::Chat, "Join the ArtCraft Discord", "help.discord"),
-        (Icon::Globe, "getartcraft.com", "help.website"),
+        (Icon::Globe, "publikhq.com/adobe", "help.website"),
         (Icon::Globe, "EffectCraft home page", "help.appPage"),
         (Icon::Code, "EffectCraft on GitHub", "help.github"),
     ];

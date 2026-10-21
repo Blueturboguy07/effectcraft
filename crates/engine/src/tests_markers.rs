@@ -13,7 +13,7 @@ fn comp_marker_dialog_fields_and_undo() {
     let r = s
         .execute(
             "markers.set",
-            json!({"index": 0, "time": 1.51, "duration": 0.5, "comment": "Intro", "chapter": "One", "url": "https://getartcraft.com", "frameTarget": "_blank",
+            json!({"index": 0, "time": 1.51, "duration": 0.5, "comment": "Intro", "chapter": "One", "url": "https://publikhq.com/adobe", "frameTarget": "_blank",
                    "cuePoint": {"name": "cue", "navigation": true, "params": [["k", "v"]]}, "protected": true, "label": "Aqua"}),
         )
         .unwrap();
@@ -25,7 +25,7 @@ fn comp_marker_dialog_fields_and_undo() {
     assert!((m["duration"].as_f64().unwrap() - 0.5).abs() < 1e-9);
     assert_eq!(m["comment"], "Intro");
     assert_eq!(m["chapter"], "One");
-    assert_eq!(m["url"], "https://getartcraft.com");
+    assert_eq!(m["url"], "https://publikhq.com/adobe");
     assert_eq!(m["frameTarget"], "_blank");
     assert_eq!(m["cuePoint"]["name"], "cue");
     assert_eq!(m["cuePoint"]["navigation"], true);

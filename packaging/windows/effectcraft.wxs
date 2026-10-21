@@ -27,9 +27,9 @@
 
     <Icon Id="EffectcraftIcon.ico" SourceFile="$(var.IconPath)" />
     <Property Id="ARPPRODUCTICON" Value="EffectcraftIcon.ico" />
-    <Property Id="ARPURLINFOABOUT" Value="https://getartcraft.com/apps/effectcraft" />
-    <Property Id="ARPURLUPDATEINFO" Value="https://getartcraft.com/apps/effectcraft" />
-    <Property Id="ARPHELPLINK" Value="https://discord.gg/artcraft" />
+    <Property Id="ARPURLINFOABOUT" Value="https://publikhq.com/effectcraft" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://publikhq.com/effectcraft" />
+    <Property Id="ARPHELPLINK" Value="https://publikhq.com/effectcraft" />
 
     <!-- An upgrade, repair or silent reinstall goes where the installed copy already is: the App Paths
          "Path" value written below, or for releases before this installer change (no Path value; they

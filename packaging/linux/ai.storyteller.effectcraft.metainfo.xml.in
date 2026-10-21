@@ -20,10 +20,10 @@
   <launchable type="desktop-id">ai.storyteller.effectcraft.desktop</launchable>
   <icon type="stock">ai.storyteller.effectcraft</icon>
   <!-- Only url types known to appstream 0.15 (Ubuntu 22.04, where CI validates): no vcs-browser. -->
-  <url type="homepage">https://getartcraft.com/apps/effectcraft</url>
-  <url type="bugtracker">https://github.com/storytold/effectcraft/issues</url>
-  <url type="help">https://github.com/storytold/effectcraft</url>
-  <url type="contact">https://discord.gg/artcraft</url>
+  <url type="homepage">https://publikhq.com/effectcraft</url>
+  <url type="bugtracker">https://github.com/Blueturboguy07/effectcraft/issues</url>
+  <url type="help">https://github.com/Blueturboguy07/effectcraft</url>
+  <url type="contact">https://publikhq.com/effectcraft</url>
   <categories>
     <category>Graphics</category>
     <category>RasterGraphics</category>
