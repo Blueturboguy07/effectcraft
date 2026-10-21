@@ -1254,7 +1254,6 @@ Help
   Enable Logging | help.enableLogging
   Reveal Logging File | help.revealLogFile
   ---
-  Join the ArtCraft Discord... | help.discord
   Provide Feedback... | help.reportIssue
   ---
   ArtCraft Website | help.website

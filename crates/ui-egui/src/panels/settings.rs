@@ -225,17 +225,12 @@ fn theme_preview(ui: &mut egui::Ui, kind: ThemeKind, width: f32) {
     painter.rect_filled(rect, 3.0, p.app_bg);
     let bar = Rect::from_min_size(rect.min, vec2(rect.width(), 13.0));
     painter.rect_filled(bar, 0.0, p.header_bg);
-    // The brand mark, the tools (the Selection tool is active) and the Discord pill.
+    // The brand mark and the tools (the Selection tool is active).
     painter.rect_filled(Rect::from_min_size(bar.min + vec2(4.0, 3.0), vec2(7.0, 7.0)), 2.0, p.accent);
     for i in 0..7 {
         let c = if i == 0 { p.accent } else { p.icon };
         painter.rect_filled(Rect::from_min_size(bar.min + vec2(16.0 + i as f32 * 8.0, 4.0), vec2(5.0, 5.0)), 1.0, c);
     }
-    painter.rect_filled(
-        Rect::from_min_max(pos2(bar.right() - 22.0, bar.top() + 3.0), pos2(bar.right() - 4.0, bar.bottom() - 3.0)),
-        3.5,
-        egui::Color32::from_rgb(0x58, 0x65, 0xf2),
-    );
     let gap = 2.0;
     let body = Rect::from_min_max(pos2(rect.left() + gap, bar.bottom() + gap), pos2(rect.right() - gap, rect.bottom() - gap));
     let right_w = (body.width() * 0.22).round();
