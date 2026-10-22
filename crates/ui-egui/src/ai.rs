@@ -48,6 +48,11 @@ const MAX_NAME_CHARS: usize = 40;
 
 /// Generate Image Layer's shapes: (id, label, the image line's `size`).
 const SHAPES: [(&str, &str, &str); 3] = [("square", "Square", "1024x1024"), ("landscape", "Landscape", "1536x1024"), ("portrait", "Portrait", "1024x1536")];
+
+/// The shapes a provider can draw: publik API draws 1024x1024 only; a person's own key has all three.
+fn offered_shapes(publik: bool) -> &'static [(&'static str, &'static str, &'static str)] {
+    if publik { &SHAPES[..1] } else { &SHAPES[..] }
+}
 /// The speech line's voices: (the `voice` parameter, label).
 const VOICES: [(&str, &str); 6] = [("alloy", "Alloy"), ("echo", "Echo"), ("fable", "Fable"), ("onyx", "Onyx"), ("nova", "Nova"), ("shimmer", "Shimmer")];
 
@@ -447,7 +452,7 @@ fn start(app: &mut EffectcraftApp, ctx: &egui::Context, kind: Kind) -> Result<()
     let choice = task.choice.clone();
     task.rx = Some(match kind {
         Kind::Image => {
-            let size = SHAPES.iter().find(|s| s.0 == choice).map_or(SHAPES[0].2, |s| s.2);
+            let size = if provider.is_publik() { SHAPES[0].2 } else { SHAPES.iter().find(|s| s.0 == choice).map_or(SHAPES[0].2, |s| s.2) };
             spawn(ctx, move || client::image_generate(&provider, &text, size))
         }
         Kind::Voice => {
@@ -627,7 +632,11 @@ fn feature_dialog(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens, kin
             Kind::Image => {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Shape").color(t.text));
-                    for (id, shown, _) in SHAPES {
+                    let shapes = offered_shapes(provider.is_publik());
+                    if !shapes.iter().any(|s| s.0 == task.choice) {
+                        task.choice = SHAPES[0].0.into();
+                    }
+                    for (id, shown, _) in shapes.iter().copied() {
                         let r = ui.radio(task.choice == id, shown);
                         autos.push((format!("{p}.shape.{id}"), r.rect, shown));
                         if r.clicked() {
@@ -962,5 +971,17 @@ mod tests {
         assert!(enabled(&app, "ai.generateImageLayer"));
         assert!(enabled(&app, "ai.settings"));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod publik_shape_tests {
+    use super::{offered_shapes, SHAPES};
+
+    #[test]
+    fn publik_api_offers_square_only() {
+        assert_eq!(offered_shapes(true).len(), 1);
+        assert_eq!(offered_shapes(true)[0].2, "1024x1024");
+        assert_eq!(offered_shapes(false).len(), SHAPES.len());
     }
 }
