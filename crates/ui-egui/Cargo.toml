@@ -11,6 +11,7 @@ workspace = true
 
 [dependencies]
 craft-ui = { workspace = true }
+craft-quit = { workspace = true, features = ["egui"] }
 effectcraft-time = { workspace = true }
 effectcraft-geom = { workspace = true }
 effectcraft-color = { workspace = true }
@@ -22,28 +23,45 @@ effectcraft-render = { workspace = true }
 effectcraft-engine = { workspace = true }
 effectcraft-gpu = { workspace = true }
 egui = { workspace = true }
-eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit"] }
+egui_extras = { workspace = true }
+eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "clipboard"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 log = { workspace = true }
+chrono = { workspace = true }
 rayon = { workspace = true }
 web-time = { workspace = true }
 kurbo = { workspace = true }
 image = { workspace = true }
+# Half-float viewer frames of 32 bpc projects (F16C is picked at run time).
+half = { workspace = true }
+bytemuck = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Floating panels open in OS windows of their own on desktop; the web keeps them in the page.
+craft-ui = { workspace = true, features = ["native-windows"] }
+craft-update = { workspace = true }
+# Waits for the display pass's error scopes (immediately ready on native wgpu).
+pollster = { workspace = true }
 sys-locale = { workspace = true }
 # publik API as the zero-setup AI option (or the person's own key): provisioning, the credential
 # file, the calls and the setup flow (Layer ▸ AI ▸ Generate Image Layer… and Voice-over from
 # Text…). Desktop only: it talks to the network, through the system's curl, and only after the
 # person sets it up and clicks.
-craft-publik = { git = "https://github.com/Blueturboguy07/craft-publik", rev = "854bdf66e4d97cb19546fdb0ed0e258a20510f0d", features = ["egui"] }
+# Commit 7926858 (branch egui-0.37) accepts egui 0.36 and 0.37: this app is on egui 0.37 since upstream v0.22.0.
+craft-publik = { git = "https://github.com/Blueturboguy07/craft-publik", rev = "7926858db80b68c988d6c325b5d287cbe74fc831", features = ["egui"] }
 
 [dev-dependencies]
+# Fonts for kittest: the workspace `egui` features are what test roots resolve, but stating them
+# here documents the requirement (kittest's own dev-dependencies do not propagate to consumers).
+egui = { workspace = true, features = ["default_fonts", "monochrome_emoji_fonts"] }
 egui_kittest = { workspace = true, features = ["eframe", "wgpu"] }
-pollster = "0.4"
+pollster = "1"
+effectcraft-segment = { workspace = true }
 effectcraft-host = { workspace = true }
+effectcraft-media = { workspace = true }
 exr = { workspace = true }
+tempfile = { workspace = true }
 
 [build-dependencies]
 serde_json = { workspace = true }

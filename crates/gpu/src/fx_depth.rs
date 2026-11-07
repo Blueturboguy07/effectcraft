@@ -268,21 +268,20 @@ fn identifier(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<
 
 fn cryptomatte(e: &mut Enc, ctx: &EffectCtx, b: GBuf, a: &AuxChannels) -> Option<GBuf> {
     let pr = ctx.params;
-    let layers = a.crypto_layers();
-    if layers.is_empty() {
-        return Some(b);
-    }
-    let want = effectcraft_effects::CRYPTO_LAYERS[(pr.e("layer") as usize).min(2)];
-    let layer = layers.iter().find(|l| l.as_str() == want || l.ends_with(want)).unwrap_or(&layers[0]).clone();
+    let Some(layer) = effectcraft_effects::crypto_layer_named(a, pr.s("layerName"), pr.e("layer") as usize) else { return Some(b) };
     let manifest = a.manifests.iter().find(|(l, _)| *l == layer).map(|(_, m)| m.as_slice());
     let sel = effectcraft_effects::selection_hashes(pr.s("selection"), manifest);
     // Per aux pixel: coverage-weighted ID colours (RGB) and the selection's coverage (A), on all
     // cores with the rank planes resolved once.
-    let img = effectcraft_effects::crypto_aux_image(a, &layer, &sel);
+    // The ID colours are only read by the Colors display; Matte, Preview and Matte Only need the
+    // matte alone.
+    // `tests::fx_depth::cryptomatte_every_display_matches_the_cpu` guards this against the shader.
+    let what = effectcraft_effects::CryptoAux::for_display(pr.e("display"), pr.b("matteOnly"));
+    let img = effectcraft_effects::crypto_aux_image_with(a, &layer, &sel, what);
     let tex = e.g.upload_image(&img)?;
     let plane = lookup(e, &b, a, &tex, [0.5, 0.5], [0.0; 4]);
     let mut p = op(7);
-    p.u[0] = [7, pr.e("display"), pr.b("matteOnly") as u32, 0];
+    p.u[0] = [7, pr.e("display"), pr.b("matteOnly") as u32, pr.b(effectcraft_effects::MATTE_ONLY_IN_ALPHA) as u32];
     point(e, &p, b, &plane)
 }
 
