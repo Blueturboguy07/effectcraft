@@ -38,6 +38,20 @@ jobs:
         with:
           key: publik-build-macos-universal
           cache-on-failure: true
+      - name: Tests of publik's changes (AI step, links, update check)
+        # Before packaging: a port that breaks publik's changes fails the job here. The tests send
+        # no usage counts (.cargo/config.toml sets DO_NOT_TRACK=1) and no AI request.
+        run: |
+          set -euo pipefail
+          # Engine: the Layer ▸ AI commands, the Help links (publik's listing, no Discord), markers.
+          cargo test --locked -p effectcraft-engine --lib -- cmd::ai:: tests::session::help_ tests::markers::
+          # Interface: the AI dialogs and Settings ▸ AI (ai::), the menu and panel catalogs
+          # (i18n::: no stale Discord rows, the [desktop] AI menu), Home's links, the marker dialog.
+          cargo test --locked -p effectcraft-ui-egui --lib -- ai:: i18n:: panels::home:: panels::markers_ui::
+          # The AI dialogs' snapshot test compiles (it is ignored: it needs a GPU).
+          cargo test --locked -p effectcraft-ui-egui --test ai_snapshot
+          # The app: argument handling before the usage counts, no update check at start.
+          cargo test --locked -p effectcraft --bin effectcraft
       - name: Build and package (ad-hoc signature, no notarization)
         run: |
           # The short commit, as publik's earlier builds carry it (<APP>_BUILD_SHA).
