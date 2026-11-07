@@ -131,11 +131,11 @@ fn parse_args(args: impl IntoIterator<Item = String>, env_port: Result<String, s
     Ok(Some(out))
 }
 
-/// Whether the app looks for a newer release when it starts. Not when started for an agent
-/// (`--control`): the "update available" prompt is modal and would block the run until a person
-/// dismisses it. Help ▸ Check for Updates still works.
-fn startup_update_check(control_port: Option<u16>) -> bool {
-    control_port.is_none()
+/// Whether the app looks for a newer release when it starts. Never in publik's build: publik
+/// delivers its updates (the listing and the launcher), and craft-update would offer and install
+/// the upstream releases. Upstream: not when started for an agent (`--control`).
+fn startup_update_check(_control_port: Option<u16>) -> bool {
+    false
 }
 
 /// A control-channel port from 1 to 65535 (0 would listen on a port nobody is told); `name` is
@@ -721,13 +721,13 @@ mod tests {
         assert_eq!(parse_env(&[], Ok("9000".into())).unwrap().map(|a| a.control_port), Some(Some(9000)));
     }
 
-    /// An app started for an agent (`--control` or `EFFECTCRAFT_CONTROL_PORT`) doesn't check for
-    /// updates at start, so no modal update prompt blocks the run; a normal launch still does.
+    /// publik's build never checks for updates at start (publik delivers them); an app started for
+    /// an agent (`--control` or `EFFECTCRAFT_CONTROL_PORT`) doesn't either.
     #[test]
     fn agent_runs_skip_the_startup_update_check() {
         let port = |args: &[&str], env| parse_env(args, env).unwrap().unwrap_or_default().control_port;
-        assert!(super::startup_update_check(port(&[], Err(VarError::NotPresent))));
-        assert!(super::startup_update_check(port(&[], Ok(String::new()))));
+        assert!(!super::startup_update_check(port(&[], Err(VarError::NotPresent))));
+        assert!(!super::startup_update_check(port(&[], Ok(String::new()))));
         assert!(!super::startup_update_check(port(&["--control", "9877"], Err(VarError::NotPresent))));
         assert!(!super::startup_update_check(port(&["--control=9877"], Err(VarError::NotPresent))));
         assert!(!super::startup_update_check(port(&[], Ok("9877".into()))));

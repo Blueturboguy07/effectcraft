@@ -14,10 +14,13 @@ pub mod ai;
 
 /// EffectCraft as craft-update knows it, with its 128 px icon and accent colour: the update
 /// prompt shows both, and an AppImage's menu entry gets the icon.
+/// publik build: the app never checks for updates (publik delivers them). If a check ever ran, it
+/// would read publik's fork, never the upstream releases.
 #[cfg(not(target_arch = "wasm32"))]
 pub const UPDATE_APP: craft_update::app::App = craft_update::app::App {
     icon_png: Some(include_bytes!("../../../assets/app-icon/hicolor/128x128/apps/ai.storyteller.effectcraft.png")),
     accent: Some([0xe0, 0x36, 0x8f]),
+    repo: "Blueturboguy07/effectcraft",
     ..craft_update::suite::EFFECTCRAFT
 };
 

@@ -44,6 +44,8 @@ impl EffectcraftApp {
     }
 }
 
+// publik build: Help ▸ Check for Updates opens the publik listing (`menus::frontend`), so nothing calls this.
+#[allow(dead_code)]
 pub(crate) fn check(app: &mut EffectcraftApp) {
     #[cfg(not(target_arch = "wasm32"))]
     {

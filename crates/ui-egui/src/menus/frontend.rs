@@ -109,9 +109,12 @@ pub fn frontend(app: &mut EffectcraftApp, ctx: &egui::Context, id: &str, p: Valu
             ctx.copy_text(path.to_string());
             json!({"path": path})
         }
+        // publik build: updates come from publik (its listing and launcher), never from the
+        // upstream releases craft-update reads, so a check opens the publik listing.
         "app.checkForUpdates" | "help.checkForUpdates" => {
-            crate::updates_ui::check(app);
-            Value::Null
+            let url = effectcraft_engine::links::APP_PAGE;
+            ctx.open_url(egui::OpenUrl::new_tab(url));
+            json!({"url": url})
         }
         "app.about" => {
             app.dialog = Some(crate::Dialog::About);
