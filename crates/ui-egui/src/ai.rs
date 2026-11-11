@@ -246,8 +246,11 @@ pub fn frame(app: &mut EffectcraftApp, ctx: &egui::Context) {
         }
     }
     ai.frames = ai.frames.saturating_add(1);
-    if !ai.first_run_checked && ai.frames > 3 {
+    // The first launch asks once the publik gate passed and the window is up (a few frames in):
+    // after "Use my own key" at the gate, the own-key form. "Later" ends that for good.
+    if !ai.first_run_checked && ai.frames > 3 && craft_publik::gate::passed() {
         ai.first_run_checked = true;
+        ai.state.reload_credential(); // the gate wrote it after this state was created
         ai.open_setup = ai.state.wants_first_run() || ai.state.owes_first_card();
     }
     let open_setup = ai.open_setup && quiet;
@@ -580,7 +583,9 @@ fn feature_dialog(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens, kin
         };
         let provider = ai.state.provider();
         if !provider.is_set_up() {
-            ui.add(egui::Label::new(format!("{} needs AI. Set it up first: publik API (no key to paste) or your own key.", kind.title())).wrap());
+            ui.add(
+                egui::Label::new(format!("{} needs AI. Set it up first: connect your publik plan (no key to paste) or use your own key.", kind.title())).wrap(),
+            );
             ui.add_space(12.0);
             ui.allocate_ui_with_layout(vec2(ui.available_width(), 26.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let r = ui.add(primary("Set Up AI...", true, t));
@@ -801,6 +806,8 @@ mod tests {
             name: "EffectCraft",
             version: "0.0.0",
             app_token: "",
+            uses_ai: true,
+            endpoints: craft_publik::Endpoints::DEFAULT,
             dialects: &["images", "audio_speech"],
             config_dir: Some(dir.to_path_buf()),
         }
@@ -976,7 +983,7 @@ mod tests {
 
 #[cfg(test)]
 mod publik_shape_tests {
-    use super::{offered_shapes, SHAPES};
+    use super::{SHAPES, offered_shapes};
 
     #[test]
     fn publik_api_offers_square_only() {

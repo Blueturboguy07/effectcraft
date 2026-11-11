@@ -29,9 +29,9 @@ mod native_menu;
 #[cfg_attr(not(any(target_os = "macos", target_os = "linux")), allow(dead_code))]
 mod sheet_dialogs;
 mod window;
-// publik's usage counts (README: Usage counts). The file is publik's reference client, kept as it is.
-#[rustfmt::skip]
-mod publik_telemetry;
+// Sign in with publik, usage counting and the AI pay choice: this build's publik facts and the
+// gate every publik app opens with.
+mod publik;
 
 use effectcraft_ui_egui::EffectcraftApp;
 use serde_json::json;
@@ -48,20 +48,6 @@ fn app_icon() -> egui::IconData {
     #[cfg(not(target_os = "macos"))]
     let png: &[u8] = ICON_PNG;
     eframe::icon_data::from_png_bytes(png).unwrap_or_default()
-}
-
-/// What publik needs to know about this build. The app token is public by design (it can only mint
-/// capped keys attributed to EffectCraft) and lives at the repository root, so source builds carry
-/// it. AI settings (`ai.json`) go in the settings folder, next to the preferences.
-fn app_info(config_dir: Option<std::path::PathBuf>) -> effectcraft_ui_egui::ai::AppInfo {
-    effectcraft_ui_egui::ai::AppInfo {
-        slug: "effectcraft",
-        name: "EffectCraft",
-        version: env!("CARGO_PKG_VERSION"),
-        app_token: include_str!("../../../publik-app-token.txt"),
-        dialects: &["images", "audio_speech"],
-        config_dir,
-    }
 }
 
 /// Both native JSON projects and Save a Copy As XML projects are openable on launch.
@@ -174,12 +160,6 @@ fn install_file_dialogs(app: &mut EffectcraftApp) -> Option<std::sync::mpsc::Rec
     }
 }
 
-/// The version in publik's usage counts: the release tag without its `v`, for example `0.9.0-publik.4`.
-/// The build number comes from `packaging/PUBLIK_BUILD`, the file the bundle version comes from.
-fn publik_version() -> String {
-    format!("{}-publik.{}", env!("CARGO_PKG_VERSION"), include_str!("../../../packaging/PUBLIK_BUILD").trim())
-}
-
 /// External effect helpers are native programs, so they start at launch only when the user opts
 /// in with `EFFECTCRAFT_HELPERS=1`: an environment variable, outside the settings folder, so
 /// writing there alone can't run code at launch. Otherwise Effect ▸ Scan for Effect Helpers
@@ -207,7 +187,7 @@ fn main() -> eframe::Result {
     // and prints one line. The builder who runs it is the consent. Before anything else, so the
     // check opens no window and leaves no log file.
     if std::env::var_os("PUBLIK_SELF_TEST").is_some() {
-        println!("{}", effectcraft_ui_egui::ai::self_test(&app_info(effectcraft_host::config_dir())));
+        println!("{}", craft_publik::self_test(&publik::app_info(effectcraft_host::config_dir())));
         return Ok(());
     }
     // Windows: the update helper is a copy of this program started with `--finish-update`.
@@ -232,9 +212,9 @@ fn main() -> eframe::Result {
             std::process::exit(1);
         }
     };
-    // publik's usage counts: `app_opened` now, `active_session` every 30 minutes, on a background
-    // thread. After the early exits above, so the self-test, `--version` and a bad option send nothing.
-    publik_telemetry::start("effectcraft", &publik_version(), None);
+    // publik's usage counts (`app_opened` now, `active_session` every 30 minutes) start once the
+    // gate passed (`publik::app_info`, `craft_publik::ui::Gate`), so the self-test, `--version` and
+    // a bad option send nothing.
     // The session log lives in the settings folder (`Logs/effectcraft.log`, the previous two runs
     // kept): a launch from the Dock or a menu has no terminal. Opened after the arguments, so
     // `--version` leaves no file behind; records logged until now are written to it first.
@@ -359,7 +339,7 @@ fn main() -> eframe::Result {
             // with a settings folder to keep the choice in; the first-launch dialog stays closed
             // while an agent drives the app over `--control`.
             if let Some(dir) = effectcraft_host::config_dir() {
-                let mut ai = effectcraft_ui_egui::ai::Ai::new(app_info(Some(dir)));
+                let mut ai = effectcraft_ui_egui::ai::Ai::new(publik::app_info(Some(dir)));
                 if control_port.is_some() {
                     ai.skip_first_run();
                 }
@@ -440,6 +420,8 @@ fn main() -> eframe::Result {
                 #[cfg(target_os = "macos")]
                 apple_events: apple_events.connect(&cc.egui_ctx),
                 app,
+                // Sign in with publik: provisioning starts now, on a worker thread; `ui` draws it.
+                gate: craft_publik::ui::Gate::new(publik::app_info(effectcraft_host::config_dir())),
                 file_dialogs,
                 window: window::Tracker::new(opened, saved_window, control_port.is_none()),
                 launch,
@@ -525,6 +507,8 @@ fn startup_failed(e: &eframe::Error, gl_next: bool) {
 /// The desktop app: the egui app plus, on macOS, the system menu bar.
 struct Desktop {
     app: EffectcraftApp,
+    /// Sign in with publik: drawn before anything of the app until it passes.
+    gate: craft_publik::ui::Gate,
     /// The commands' file dialogs, shown at the end of the frame that asked for them.
     file_dialogs: Option<std::sync::mpsc::Receiver<sheet_dialogs::Asked>>,
     #[cfg(target_os = "macos")]
@@ -554,9 +538,14 @@ impl eframe::App for Desktop {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        self.app.ui(ui, frame);
-        if let Some(asked) = &self.file_dialogs {
-            sheet_dialogs::show_asked(asked, frame, ui.ctx());
+        // Sign in with publik comes first: the gate draws itself until the person is signed in
+        // (and, the first time, has chosen how the app pays for AI). Nothing of the app shows
+        // before; the window tracker and the launch guard below still see every frame.
+        if self.gate.ui(ui) {
+            self.app.ui(ui, frame);
+            if let Some(asked) = &self.file_dialogs {
+                sheet_dialogs::show_asked(asked, frame, ui.ctx());
+            }
         }
         self.window.frame(ui.ctx(), self.app.session.config.as_deref());
         if !self.drawn {

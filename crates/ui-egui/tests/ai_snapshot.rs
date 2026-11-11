@@ -26,6 +26,8 @@ fn ai_dialogs_snapshot() {
         name: "EffectCraft",
         version: "0.0.0",
         app_token: "",
+        uses_ai: true,
+        endpoints: craft_publik::Endpoints::DEFAULT,
         dialects: &["images", "audio_speech"],
         config_dir: Some(config.clone()),
     };
